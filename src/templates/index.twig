@@ -1,0 +1,246 @@
+{# @var craft \craft\web\twig\variables\CraftVariable #}
+{#
+/**
+ * craft-deploy plugin for Craft CMS 3.x
+ *
+ * craft-deploy index.twig
+ *
+ * @author        dilewe
+ * @copyright Copyright (c) 2021 dilewe
+ * @link            dilewe.de
+ * @package     Craftdeploy
+ * @since         1.0.0
+ */
+#}
+
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% do view.registerAssetBundle("dilewe\\release\\assetbundles\\verffentlichencpsection\\VerffentlichenCPSectionAsset") %}
+
+{# Link for the ? icon at the bottom of the page #}
+{% set docsUrl = "https://github.com/dilewe/release/blob/master/README.md" %}
+
+{# The title of this CP section #}
+{% set title = "Veröffentlichen" %}
+
+{# The URL to this plugin's base CP section #}
+{% set pluginCpUrl = url('craft-deploy') %}
+
+{# Get a URL to an image in our AssetBundle #}
+{% set iconUrl = view.getAssetManager().getPublishedUrl('@dilewe/release/assetbundles/verffentlichencpsection/dist', true) ~ '/img/icon.svg' %}
+
+{# Content that should appear in the page header#}
+{% set extraPageHeaderHtml %}
+	<div class="buttons">
+		<a href="{{ pluginCpUrl }}" class="btn submit add icon">{{ "Click Me!"|t('craft-deploy') }}</a>
+	</div>
+{% endset %}
+
+{# The content of the CP Section#}
+{% set content %}
+
+<style>
+	:root {
+		--dlw-color: #1E3E51;
+	}
+	.progress {
+		width: 99%;
+		background-color: grey;
+		color: white;
+		margin: 20px auto;
+	}
+	.bar {
+		width: 100%;
+		height: 30px;
+		background-color: grey;
+		text-align: center;
+		line-height: 30px;
+		color: white;
+		overflow: hidden;
+	}
+	.bar::after {
+		content: "";
+		background-image: url("{{ iconUrl }}");
+		background-size: contain;
+		width: 30px;
+		height: 30px;
+	}
+	.button {
+		display: block;
+		margin: 5px;
+		border: 1px solid var(--dlw-color);
+		border-radius: 5px;
+		padding: 5px 10px;
+		background-color: var(--dlw-color);
+		color: white;
+		font-size: 28px;
+	}
+	.statusText {
+		margin: 5px 0;
+	}
+	.seperator {
+		display: block;
+		width: 100%;
+		height: 3px;
+		border-bottom: 1px solid grey;
+		margin: 20px auto;
+	}
+	status-url,
+	status-secret {
+		display: block;
+		width: 100%;
+		margin: 0;
+		height: 20px;
+	}
+	.dev-console {
+		display: block;
+		width: 100%;
+		height: 40px;
+	}
+
+</style>
+
+
+{# <form method="post" accept-charset="UTF-8">
+	{{ csrfInput() }}
+	<input type="hidden" name="action" value="craft-deploy/deploy/deploy">
+	<button class="btn submit" type="submit">{{'Do it'|t('craft-deploy')}}</button>
+</form> #}
+
+<status>Status: <span>prüfe...</span></status>
+<status-url></status-url>
+<status-secret></status-secret>
+
+<p>hier kann die Veröffentlichung gestartet werden:</p>
+<button id="deploy" class="button">Veröffentlichen</button>
+
+<div class="progress">
+	<div class="bar">chille -.- zZZ</div>
+</div>
+
+<span class="statustext"></span>
+
+<p>dev-tools:</p>
+<button id="failure" class="button">(Failure)</button>
+
+<p class="dev-console"></p>
+
+<p>{{alias("@releaseUrl")}}</p>
+
+<script>
+const releaseUrl = "{{alias("@releaseUrl")}}";
+const releaseSecret = "{{alias("@releaseSecret")}}";
+const deployButton = document.getElementById("deploy");
+const bar = document.querySelector(".bar");
+const progress = document.querySelector(".progress");
+const statusSpan = document.querySelector("status span");
+const statusUrl = document.querySelector("status-url");
+const statusSecret = document.querySelector("status-secret");
+const failureButton = document.getElementById("failure");
+const devConsole = document.querySelector(".dev-console");
+
+const fetchUrl = document.getElementById("server_url");
+
+const isValidSHA1 = string => {
+    return string.match("^[a-fA-F0-9]{40}$");
+};
+
+const isValidUrl = string => {
+	let url;
+	try {
+		url = new URL(string);
+	}
+	catch (e) {
+		devConsole.innerText = e;
+		return false;
+	}
+	if (url.protocol === "https:") {
+		return url.href
+	}
+	devConsole.innerText = `wrong protocol: ${ url.protocol}`;
+	return false
+};
+
+const setStatus = (status, element) => {
+	if (!element) { return; }
+	element.innerText = status;
+	return;
+};
+
+const activateButton = () => {
+	deployButton.addEventListener("click", startRelease);
+};
+
+const checkIn = (url, secret) => {
+	let check = 0;
+	if (isValidUrl(url)) {
+		setStatus(isValidUrl(url), statusUrl);
+		++check;
+	}
+	if (isValidSHA1(secret)) {
+		setStatus(isValidSHA1(secret)[0], statusSecret);
+		++check;
+	}
+	if (check === 2) {
+		const valid = document.createElement("VALID");
+		statusSpan.innerText = "Ok";
+		statusSpan.style.color = "green";
+		activateButton();
+	}
+}
+
+const startRelease = () => {
+	deployButton.removeEventListener("click",startRelease);
+	getWebhook();
+};
+
+
+const getWebhook = async() => {
+	const url = releaseUrl;
+	if(!url) {return;}
+	const data = {
+		"action": "released"
+	};
+	fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			"X-Hub-Signature": `sha1=${releaseSecret}`
+		},
+		body: JSON.stringify(data)
+	});
+}
+
+
+let jsonId = {};
+let ping = {};
+
+checkIn(releaseUrl, releaseSecret);
+
+
+const startDeploy = async() => {
+
+	progress.style.display = "block";
+	bar.style.width = "100%";
+	bar.innerText = "gestartet";
+	bar.style.backgroundColor = "#257DA7";
+
+}
+
+const setBar = percent => {
+	if (percent > 0) {
+		progress.style.display = "block";
+	}
+	bar.style.width = percent + "%";
+	bar.innerHTML = percent + "%";
+	if (percent > 99) {
+		progress.style.display = "none";
+	}
+}
+
+setTimeout(() => {
+}, 0);
+
+</script>
+{% endset %}
