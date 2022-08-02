@@ -204,8 +204,9 @@ const getWebhook = async() => {
 	};
 	fetch(url, {
 		method: "POST",
+		referrerPolicy: "origin-when-cross-origin",
 		headers: {
-			"Accept": "application/json",
+			"Accept": "*/*",
 			"Content-Type": "application/json",
 			"X-Hub-Signature": `sha1=${releaseSecret}`
 		},
