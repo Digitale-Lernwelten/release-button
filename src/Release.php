@@ -67,28 +67,21 @@ class Release extends Plugin
         parent::init();
         self::$plugin = $this;
 
+
         Event::on(
             UrlManager::class,
-            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
+            UrlManager::EVENT_REGISTER_CP_URL_RULES,
             function (RegisterUrlRulesEvent $event) {
-                $event->rules['siteActionTrigger1'] = 'release/release';
+                $event->rules['release-deploy'] = \dilewe\release\controllers\ReleaseController::class;
             }
         );
 
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
-                $event->rules['cpActionTrigger1'] = 'release/release/do-something';
-            }
-        );
-
-        Event::on(
-            Plugins::class,
-            Plugins::EVENT_AFTER_INSTALL_PLUGIN,
-            function (PluginEvent $event) {
-                if ($event->plugin === $this) {
-                }
+            static function(RegisterUrlRulesEvent $event) {
+                // Field Layouts
+                $event->rules['release/deploy'] = 'release/deploy';
             }
         );
 

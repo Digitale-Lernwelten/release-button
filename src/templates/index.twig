@@ -69,12 +69,17 @@
 	.button {
 		display: block;
 		margin: 5px;
-		border: 1px solid var(--dlw-color);
-		border-radius: 5px;
+		border: 1px solid grey;
+		border-radius: 50%;
 		padding: 5px 10px;
 		background-color: var(--dlw-color);
 		color: white;
 		font-size: 28px;
+		width: 200px;
+		height: 200px;
+		margin-left: auto;
+		margin-right: auto;
+		cursor: pointer;
 	}
 	.statusText {
 		margin: 5px 0;
@@ -113,20 +118,14 @@
 <status-secret></status-secret>
 
 <p>hier kann die Veröffentlichung gestartet werden:</p>
-<button id="deploy" class="button">Veröffentlichen</button>
+<button id="deploy" class="button">Ver&shy;öffent&shy;lichen</button>
 
 <div class="progress">
-	<div class="bar">chille -.- zZZ</div>
+	<div class="bar">warte...</div>
 </div>
 
 <span class="statustext"></span>
 
-<p>dev-tools:</p>
-<button id="failure" class="button">(Failure)</button>
-
-<p class="dev-console"></p>
-
-<p>{{alias("@releaseUrl")}}</p>
 
 <script>
 const releaseUrl = "{{alias("@releaseUrl")}}";
@@ -135,17 +134,18 @@ const deployButton = document.getElementById("deploy");
 const bar = document.querySelector(".bar");
 const progress = document.querySelector(".progress");
 const statusSpan = document.querySelector("status span");
+const statusTxt = document.querySelector(".statustext");
 const statusUrl = document.querySelector("status-url");
 const statusSecret = document.querySelector("status-secret");
 const failureButton = document.getElementById("failure");
 const devConsole = document.querySelector(".dev-console");
 
-const fetchUrl = document.getElementById("server_url");
-
 const isValidSHA1 = string => {
-    return string.match("^[a-fA-F0-9]{40}$");
+	if (string.length > 1) {
+		return string;
+	}
+    return false;
 };
-
 const isValidUrl = string => {
 	let url;
 	try {
@@ -161,15 +161,10 @@ const isValidUrl = string => {
 	devConsole.innerText = `wrong protocol: ${ url.protocol}`;
 	return false
 };
-
 const setStatus = (status, element) => {
 	if (!element) { return; }
 	element.innerText = status;
 	return;
-};
-
-const activateButton = () => {
-	deployButton.addEventListener("click", startRelease);
 };
 
 const checkIn = (url, secret) => {
@@ -179,7 +174,7 @@ const checkIn = (url, secret) => {
 		++check;
 	}
 	if (isValidSHA1(secret)) {
-		setStatus(isValidSHA1(secret)[0], statusSecret);
+		setStatus("Secret vorhanden", statusSecret);
 		++check;
 	}
 	if (check === 2) {
@@ -189,60 +184,43 @@ const checkIn = (url, secret) => {
 		activateButton();
 	}
 }
-
 const startRelease = () => {
 	deployButton.removeEventListener("click",startRelease);
+	deployButton.style.backgroundColor = "grey";
+	deployButton.style.cursor = "progress";
+	bar.style.backgroundColor = "var(--dlw-color)";
+	bar.innerText = "Release gestartet";
+
+	statusTxt.innerText = "";
 	getWebhook();
 };
 
 
+
 const getWebhook = async() => {
-	const url = releaseUrl;
-	if(!url) {return;}
-	const data = {
-		"action": "released"
-	};
-	fetch(url, {
-		method: "POST",
-		referrerPolicy: "origin-when-cross-origin",
+    const csrfTokenName = "{{ craft.app.config.general.csrfTokenName|e('js') }}";
+    const csrfTokenValue = "{{ craft.app.request.csrfToken|e('js') }}";
+	const url = "/admin/release/deploy";
+	const body = {};
+	body[csrfTokenName] = csrfTokenValue;
+	const response = await fetch(url, {
+		method: 'POST',
 		headers: {
-			"Accept": "*/*",
-			"Content-Type": "application/json",
-			"X-Hub-Signature": `sha1=${releaseSecret}`
-		},
-		body: JSON.stringify(data)
-	});
+        	'Content-Type': 'application/json;charset=utf-8'
+        },
+		body: JSON.stringify(body)}
+	);
+	// const data = await response.json();
 }
 
-
-let jsonId = {};
-let ping = {};
+const activateButton = () => {
+	deployButton.addEventListener("click", startRelease);
+};
 
 checkIn(releaseUrl, releaseSecret);
 
 
-const startDeploy = async() => {
 
-	progress.style.display = "block";
-	bar.style.width = "100%";
-	bar.innerText = "gestartet";
-	bar.style.backgroundColor = "#257DA7";
-
-}
-
-const setBar = percent => {
-	if (percent > 0) {
-		progress.style.display = "block";
-	}
-	bar.style.width = percent + "%";
-	bar.innerHTML = percent + "%";
-	if (percent > 99) {
-		progress.style.display = "none";
-	}
-}
-
-setTimeout(() => {
-}, 0);
 
 </script>
 {% endset %}
