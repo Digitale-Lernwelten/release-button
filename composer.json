@@ -2,7 +2,7 @@
     "name": "dilewe/release",
     "description": "craft plugin for releases and statistics",
     "type": "craft-plugin",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "keywords": [
         "craft",
         "cms",
