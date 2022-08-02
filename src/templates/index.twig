@@ -30,6 +30,10 @@
 {# Get a URL to an image in our AssetBundle #}
 {% set iconUrl = view.getAssetManager().getPublishedUrl('@dilewe/release/assetbundles/verffentlichencpsection/dist', true) ~ '/img/icon.svg' %}
 
+{% set vHello = view.getAssetManager().getPublishedUrl('@dilewe/release/assetbundles/verffentlichencpsection/dist', true) ~ '/img/Monstrohello.mp4' %}
+{% set vWait = view.getAssetManager().getPublishedUrl('@dilewe/release/assetbundles/verffentlichencpsection/dist', true) ~ '/img/Monstrowaiting.jpg' %}
+{% set vDone = view.getAssetManager().getPublishedUrl('@dilewe/release/assetbundles/verffentlichencpsection/dist', true) ~ '/img/Monstroexited.mp4' %}
+
 {# Content that should appear in the page header#}
 {% set extraPageHeaderHtml %}
 	<div class="buttons">
@@ -103,6 +107,23 @@
 		width: 100%;
 		height: 40px;
 	}
+	#respond {
+		width: 200px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+	#hello {
+		width: 100%;
+	}
+	#waiting {
+		display:none;
+		width: 50%;
+		margin: 0 auto;
+	}
+	#done {
+		display:none;
+		width: 100%;
+	}
 
 </style>
 
@@ -124,7 +145,19 @@
 	<div class="bar">warte...</div>
 </div>
 
-<span class="statustext"></span>
+<div id="respond">
+	<video id="hello" autoplay muted playsinline="">
+		<source src="{{vHello}}" type="video/mp4">
+	</video>
+	<img id="waiting" src="{{vWait}}" />
+	<video id="done" muted playsinline="">
+		<source src="{{vDone}}" type="video/mp4">
+	</video>
+</div>
+
+
+
+
 
 
 <script>
@@ -139,6 +172,9 @@ const statusUrl = document.querySelector("status-url");
 const statusSecret = document.querySelector("status-secret");
 const failureButton = document.getElementById("failure");
 const devConsole = document.querySelector(".dev-console");
+const rStart = document.getElementById("hello");
+const rWait = document.getElementById("waiting");
+const rDone = document.getElementById("done");
 
 const isValidSHA1 = string => {
 	if (string.length > 1) {
@@ -190,8 +226,11 @@ const startRelease = () => {
 	deployButton.style.cursor = "progress";
 	bar.style.backgroundColor = "var(--dlw-color)";
 	bar.innerText = "Release gestartet";
-
-	statusTxt.innerText = "";
+	rStart.style.display = "none";
+	rWait.style.display = "none";
+	rDone.style.display = "block";
+	clearTimeout(startV);
+	rDone.play();
 	getWebhook();
 };
 
@@ -210,7 +249,7 @@ const getWebhook = async() => {
         },
 		body: JSON.stringify(body)}
 	);
-	// const data = await response.json();
+	const data = await response.json();
 }
 
 const activateButton = () => {
@@ -219,7 +258,12 @@ const activateButton = () => {
 
 checkIn(releaseUrl, releaseSecret);
 
+const picWaiting = () => {
+	rStart.style.display = "none";
+	rWait.style.display = "block";
+}
 
+const startV = setTimeout(picWaiting, 3000);
 
 
 </script>
