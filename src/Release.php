@@ -13,10 +13,14 @@ namespace dilewe\release;
 
 use Craft;
 use craft\base\Plugin;
-use craft\services\Plugins;
 use craft\events\PluginEvent;
-use craft\web\UrlManager;
 use craft\events\RegisterUrlRulesEvent;
+use craft\events\RegisterCpNavItemsEvent;
+use craft\services\Plugins;
+use craft\services\UserPermissions;
+use craft\events\RegisterUserPermissionsEvent;
+use craft\web\UrlManager;
+use craft\web\twig\variables\Cp;
 
 use yii\base\Event;
 
@@ -25,7 +29,7 @@ use yii\base\Event;
  *
  * @author    Digitale-Lernwelten
  * @package   Release
- * @since     1.0.0
+ * @since     1.2.0
  *
  */
 class Release extends Plugin
@@ -44,7 +48,7 @@ class Release extends Plugin
     /**
      * @var string
      */
-    public $schemaVersion = '1.0.0';
+    public $schemaVersion = '1.2.0';
 
     /**
      * @var bool
@@ -54,7 +58,7 @@ class Release extends Plugin
     /**
      * @var bool
      */
-    public $hasCpSection = true;
+    public $hasCpSection = false;
 
     // Public Methods
     // =========================================================================
@@ -93,7 +97,25 @@ class Release extends Plugin
                     'deployment' => [
                         'label' => 'Veröffentlichen',
                     ],
+                    'accessPlugin-release' => [
+                        'label' => 'Access Release',
+                    ]
                 ];
+            }
+        );
+
+        Event::on(
+            Cp::class,
+            Cp::EVENT_REGISTER_CP_NAV_ITEMS,
+            function(RegisterCpNavItemsEvent $event) {
+                //$this->requirePermission("deployment");
+                if (Craft::$app->user->checkPermission('deployment')) {
+                    $event->navItems[] = [
+                        'url' => 'release',
+                        'label' => 'Veröffentlichen',
+                        'icon' => '@dilewe/release/icon.svg',
+                    ];
+                }
             }
         );
 
@@ -106,17 +128,4 @@ class Release extends Plugin
             __METHOD__
         );
     }
-
-    // Protected Methods
-    // =========================================================================
-
-    //Craft
-    public function getCpNavItem()
-    {
-      $item = parent::getCpNavItem();
-      $item['label'] = "Veröffentlichen";
-
-      return $item;
-    }
-
 }
