@@ -22,7 +22,7 @@ class DeployController extends \craft\web\Controller {
 
     public function actionIndex() {
         $this->requirePostRequest();
-        $this->requireAdmin();
+        $this->requirePermission("deployment");
 
         if(!$_ENV['CRAFT_RELEASE_SECRET']){
             return $this->asJson(["deployment" => false, "error" => true, "textError" => "Missing secret"]);

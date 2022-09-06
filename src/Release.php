@@ -85,6 +85,18 @@ class Release extends Plugin
             }
         );
 
+        Event::on(
+            UserPermissions::class,
+            UserPermissions::EVENT_REGISTER_PERMISSIONS,
+            function(RegisterUserPermissionsEvent $event) {
+                $event->permissions['Dilewe'] = [
+                    'deployment' => [
+                        'label' => 'Veröffentlichen',
+                    ],
+                ];
+            }
+        );
+
         Craft::info(
             Craft::t(
                 'release',
