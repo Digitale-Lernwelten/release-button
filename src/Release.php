@@ -29,7 +29,7 @@ use yii\base\Event;
  *
  * @author    Digitale-Lernwelten
  * @package   Release
- * @since     1.2.0
+ * @since     1.2.1
  *
  */
 class Release extends Plugin
@@ -48,7 +48,7 @@ class Release extends Plugin
     /**
      * @var string
      */
-    public $schemaVersion = '1.2.0';
+    public $schemaVersion = '1.2.1';
 
     /**
      * @var bool
