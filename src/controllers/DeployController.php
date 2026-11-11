@@ -1,52 +1,70 @@
 <?php
-/**
- * release plugin for Craft CMS 3.x
- *
- * craft plugin for releases and statistics
- *
- * @link      https://dilewe.de
- * @copyright Copyright (c) 2021 Digitale-Lernwelten
- */
 
 namespace dilewe\release\controllers;
 
 use Craft;
+use craft\helpers\App;
+use craft\web\Controller;
+use craft\web\View;
+use GuzzleHttp\Exception\GuzzleException;
+use yii\web\Response;
 
-/**
- * @author    Digitale-Lernwelten
- * @package   Release
- * @since     1.0.0
- */
-class DeployController extends \craft\web\Controller {
-    protected $allowAnonymous = [];
+class DeployController extends Controller
+{
+    public function actionPage(): Response
+    {
+        $this->requirePermission('deployment');
 
-    public function actionIndex() {
+        return $this->renderTemplate('release/index', [
+            'configured' => $this->webhookConfig() !== null,
+        ], View::TEMPLATE_MODE_CP);
+    }
+
+    public function actionIndex(): Response
+    {
         $this->requirePostRequest();
-        $this->requirePermission("deployment");
+        $this->requirePermission('deployment');
+        $this->requireAcceptsJson();
 
-        if(!$_ENV['CRAFT_RELEASE_SECRET']){
-            return $this->asJson(["deployment" => false, "error" => true, "textError" => "Missing secret"]);
+        $config = $this->webhookConfig();
+        if ($config === null) {
+            return $this->asJson(['deployment' => false, 'error' => 'Configure a valid HTTPS CRAFT_RELEASE_URL and CRAFT_RELEASE_SECRET.']);
         }
-        if(!$_ENV['CRAFT_RELEASE_URL']){
-            return $this->asJson(["deployment" => false, "error" => true, "textError" => "Missing URL"]);
+
+        [$url, $secret] = $config;
+        $payload = json_encode(['action' => 'released'], JSON_THROW_ON_ERROR);
+
+        try {
+            $response = Craft::createGuzzleClient(['timeout' => 10, 'allow_redirects' => false])->post($url, [
+                'body' => $payload,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-Hub-Signature' => hash_hmac('sha1', $payload, $secret),
+                ],
+            ]);
+        } catch (GuzzleException $exception) {
+            Craft::error('Release webhook failed: ' . get_class($exception), __METHOD__);
+            return $this->asJson(['deployment' => false, 'error' => 'The release webhook request failed.']);
         }
 
-        $secret = $_ENV['CRAFT_RELEASE_SECRET'];
-        $payload = json_encode(["action" => "released"]);
-        $signature = hash_hmac('sha1', $payload, $secret);
+        if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
+            return $this->asJson(['deployment' => false, 'error' => 'The release webhook did not accept the request.']);
+        }
 
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL,$_ENV['CRAFT_RELEASE_URL']);
-        curl_setopt($ch, CURLOPT_POST, 1);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            "Content-Type: application/json",
-            "X-Hub-Signature: " . $signature
-        ]);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        $server_output = curl_exec($ch);
-        curl_close ($ch);
+        return $this->asJson(['deployment' => true, 'error' => false]);
+    }
 
-        return $this->asJson(["deployment" => true, "error" => false]);
+    private function webhookConfig(): ?array
+    {
+        $url = App::env('CRAFT_RELEASE_URL');
+        $secret = App::env('CRAFT_RELEASE_SECRET');
+
+        if (!is_string($url) || !is_string($secret) || $secret === '' ||
+            filter_var($url, FILTER_VALIDATE_URL) === false ||
+            parse_url($url, PHP_URL_SCHEME) !== 'https') {
+            return null;
+        }
+
+        return [$url, $secret];
     }
 }

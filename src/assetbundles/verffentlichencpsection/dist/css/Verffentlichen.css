@@ -1,11 +1,48 @@
-/**
- * release plugin for Craft CMS
- *
- * Verffentlichen Field CSS
- *
- * @author    Digitale-Lernwelten
- * @copyright Copyright (c) 2021 Digitale-Lernwelten
- * @link      https://dilewe.de
- * @package   Release
- * @since     1.0.0
- */
+.release-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2rem 1rem;
+    text-align: center;
+}
+
+.release-button {
+    border: 0;
+    border-radius: 0.5rem;
+    background: #12372b;
+    box-shadow: 6px 6px 0 #3b7a24;
+    color: #fff;
+    cursor: pointer;
+    font-size: 2rem;
+    font-weight: bold;
+    padding: 1.5rem 2rem;
+}
+
+.release-button:hover:not(:disabled) {
+    background: #3b7a24;
+}
+
+.release-button:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.release-animation {
+    max-width: 240px;
+    width: 100%;
+}
+
+.release-animation video,
+.release-animation img {
+    display: block;
+    width: 100%;
+}
+
+.release-animation [hidden] {
+    display: none;
+}
+
+#release-status {
+    min-height: 1.5em;
+}

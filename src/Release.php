@@ -1,131 +1,55 @@
 <?php
-/**
- * release plugin for Craft CMS 3.x
- *
- * craft plugin for releases and statistics
- *
- * @link      https://dilewe.de
- * @copyright Copyright (c) 2021 Digitale-Lernwelten
- */
 
 namespace dilewe\release;
 
-
 use Craft;
 use craft\base\Plugin;
-use craft\events\PluginEvent;
 use craft\events\RegisterUrlRulesEvent;
-use craft\events\RegisterCpNavItemsEvent;
-use craft\services\Plugins;
-use craft\services\UserPermissions;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\services\UserPermissions;
 use craft\web\UrlManager;
-use craft\web\twig\variables\Cp;
-
 use yii\base\Event;
 
-/**
- * Class Release
- *
- * @author    Digitale-Lernwelten
- * @package   Release
- * @since     1.2.1
- *
- */
 class Release extends Plugin
 {
-    // Static Properties
-    // =========================================================================
+    public string $schemaVersion = '1.2.1';
+    public bool $hasCpSettings = false;
+    public bool $hasCpSection = true;
 
-    /**
-     * @var Release
-     */
-    public static $plugin;
-
-    // Public Properties
-    // =========================================================================
-
-    /**
-     * @var string
-     */
-    public $schemaVersion = '1.2.1';
-
-    /**
-     * @var bool
-     */
-    public $hasCpSettings = false;
-
-    /**
-     * @var bool
-     */
-    public $hasCpSection = false;
-
-    // Public Methods
-    // =========================================================================
-
-    /**
-     * @inheritdoc
-     */
-    public function init()
+    public function init(): void
     {
         parent::init();
-        self::$plugin = $this;
-
 
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
-                $event->rules['release-deploy'] = \dilewe\release\controllers\ReleaseController::class;
-            }
-        );
-
-        Event::on(
-            UrlManager::class,
-            UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            static function(RegisterUrlRulesEvent $event) {
-                // Field Layouts
-                $event->rules['release/deploy'] = 'release/deploy';
+            static function(RegisterUrlRulesEvent $event): void {
+                $event->rules['release'] = 'release/deploy/page';
             }
         );
 
         Event::on(
             UserPermissions::class,
             UserPermissions::EVENT_REGISTER_PERMISSIONS,
-            function(RegisterUserPermissionsEvent $event) {
-                $event->permissions['Dilewe'] = [
-                    'deployment' => [
-                        'label' => 'Veröffentlichen',
+            static function(RegisterUserPermissionsEvent $event): void {
+                $event->permissions[] = [
+                    'heading' => 'Dilewe',
+                    'permissions' => [
+                        'deployment' => ['label' => 'Veröffentlichen'],
                     ],
-                    'accessPlugin-release' => [
-                        'label' => 'Access Release',
-                    ]
                 ];
             }
         );
+    }
 
-        Event::on(
-            Cp::class,
-            Cp::EVENT_REGISTER_CP_NAV_ITEMS,
-            function(RegisterCpNavItemsEvent $event) {
-                //$this->requirePermission("deployment");
-                if (Craft::$app->user->checkPermission('deployment')) {
-                    $event->navItems[] = [
-                        'url' => 'release',
-                        'label' => 'Veröffentlichen',
-                        'icon' => '@dilewe/release/icon.svg',
-                    ];
-                }
-            }
-        );
+    public function getCpNavItem(): ?array
+    {
+        if (!Craft::$app->getUser()->checkPermission('deployment')) {
+            return null;
+        }
 
-        Craft::info(
-            Craft::t(
-                'release',
-                '{name} plugin loaded',
-                ['name' => $this->name]
-            ),
-            __METHOD__
-        );
+        $item = parent::getCpNavItem();
+        $item['label'] = 'Veröffentlichen';
+        return $item;
     }
 }

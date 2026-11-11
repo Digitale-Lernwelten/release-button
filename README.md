@@ -1,51 +1,48 @@
-# release plugin for Craft CMS 3.x
+# Release button for Craft CMS 4
 
-craft plugin for releases and statistics
-
-![Screenshot](resources/img/icon.png)
+A control panel button that sends a signed release webhook.
 
 ## Requirements
 
-This plugin requires Craft CMS 3.0.0-beta.23 or later.
+- Craft CMS 4
+- PHP 8.0.2 or newer
 
 ## Installation
 
-To install the plugin, follow these instructions.
+Install the plugin with Composer and enable it in **Settings → Plugins**:
 
-1. Add this path to your composer "repositories" in your Craft project:
-
-```
-"repositories": [
-    {
-      "type": "path",
-      "url": "../craft-release/",
-      "options": {
-        "symlink": true
-      }
-    }
-  ],
+```sh
+composer require dilewe/release:^2.0
+php craft plugin/install release
 ```
 
-2. Then tell Composer to require the plugin:
+For a local checkout, add it as a Composer path repository in the Craft project before running `composer require`:
 
-```
-"require": {
-    "craftcms/aws-s3": "1.3.0",
-    "dilewe/release": "1.0.0",
-    "craftcms/redactor": "2.8.8",
+```json
+{
+  "repositories": [
+    { "type": "path", "url": "../release-button", "options": { "symlink": true } }
+  ]
 }
 ```
 
-3. then update with composer
+## Configuration
+
+Set these environment variables in the Craft project (for example, in `.env`):
+
+```dotenv
+CRAFT_RELEASE_URL="https://example.com/release-webhook"
+CRAFT_RELEASE_SECRET="replace-with-a-secret"
 ```
-composer update
-```
 
-4. In the Control Panel, go to Settings → Plugins and click the “Install” button for release.
+The URL must use HTTPS. The plugin sends `{"action":"released"}` as JSON with an `X-Hub-Signature` header containing the hex-encoded HMAC-SHA1 of that exact JSON payload, signed with `CRAFT_RELEASE_SECRET`. The secret remains on the server.
 
+Grant users the **Access Release** (`accessPlugin-release`) and **Veröffentlichen** (`deployment`) permissions. The navigation item is visible only to users with both permissions. The action also checks `deployment` before sending the webhook.
 
-## Configuring release
+The button reports whether the webhook accepted the request; it does not wait for an external deployment to finish.
 
-You need to configure the Adress of the server in config/general.php, variable "lasubAdministration"
+## Upgrading from Craft 3
 
-Brought to you by [Digitale-Lernwelten](https://dilewe.de)
+Version 2 requires Craft 4. Keep the plugin handle `release` when upgrading so existing user permissions can be retained. Move webhook settings to `CRAFT_RELEASE_URL` and `CRAFT_RELEASE_SECRET` if they were previously provided through Twig aliases or other configuration.
+
+For Craft 3 projects, use the last Craft 3 release (`"dilewe/release": "^1.2.1"`). After upgrading the project and its other plugins to Craft 4, use `"dilewe/release": "^2.0"`. Do not use `dev-master` for deployed projects; it follows the current branch instead of a stable release.
