@@ -13,6 +13,7 @@ class DeployController extends Controller
 {
     public function actionPage(): Response
     {
+        $this->requirePermission('accessPlugin-release');
         $this->requirePermission('deployment');
 
         return $this->renderTemplate('release/index', [
@@ -23,6 +24,7 @@ class DeployController extends Controller
     public function actionIndex(): Response
     {
         $this->requirePostRequest();
+        $this->requirePermission('accessPlugin-release');
         $this->requirePermission('deployment');
         $this->requireAcceptsJson();
 
