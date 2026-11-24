@@ -1,6 +1,6 @@
 <?php
 /**
- * release plugin for Craft CMS 4.x
+ * release plugin for Craft CMS 5.x
  *
  * craft plugin for releases and statistics
  *

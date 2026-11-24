@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+### Changed
+- Require Craft CMS 5 and PHP 8.2 or newer.
+- Require both plugin access and deployment permissions for the control panel page and webhook action.
+
 ## 2.0.0 - 2026-11-11
 ### Changed
 - Require Craft CMS 4 and PHP 8.0.2 or newer.
